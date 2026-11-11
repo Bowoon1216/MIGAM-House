@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  HOST
+  ADMIN
+}
+
+enum AuthProvider {
+  KAKAO
+  NAVER
+  DEV
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
+
+/// 회차별 제휴 공간 대관 상태 (호스트가 선택 → 관리자가 확정)
+enum VenueStatus {
+  REQUESTED
+  FIXED
+}
+
+model User {
+  id          String       @id @default(cuid())
+  provider    AuthProvider
+  snsId       String
+  email       String?
+  name        String
+  instagramId String?
+  profileImg  String?
+  role        Role         @default(USER)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  club   Club?
+  orders Order[]
+
+  @@unique([provider, snsId])
+  @@index([role])
+}
+
+/// 관리자가 제공하는 무드(미감) 태그
+model MoodTag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Space {
+  id             String          @id @default(cuid())
+  name           String
+  address        String
+  priceCondition String
+  description    String?
+  createdAt      DateTime        @default(now())
+  sessions       SeasonSession[]
+}
+
+/// 인플루언서(호스트) 1명당 1개의 클럽 = 개인 브랜드 홈페이지
+model Club {
+  id                 String   @id @default(cuid())
+  hostId             String   @unique
+  host               User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  /// 클럽에 크게 노출되는 이름 (예: Jisu)
+  displayName        String
+  /// 스타일 무드 해시태그 (# 없이 저장)
+  moodTags           String[]
+  /// 베스트 사진 갤러리. 첫 장이 메인(커버) 사진
+  gallery            String[]
+  /// "저는 이런 분위기와 라이프스타일을 사랑해요"
+  intro              String   @db.Text
+  /// "저와 만나면 이런 걸 얻어갈 수 있어요" 체크리스트
+  benefits           String[]
+  /// 인스타그램 팔로워 수 (현재는 수동 입력)
+  instagramFollowers Int?
+  isFeatured         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  seasons Season[]
+
+  @@index([isFeatured])
+}
+
+/// 클럽 하위의 4개월 단위 기수
+model Season {
+  id          String   @id @default(cuid())
+  clubId      String
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  number      Int
+  price       Int
+  maxCapacity Int
+  startDate   DateTime
+  endDate     DateTime
+  /// 예약 확정 멤버에게만 노출되는 오픈채팅 링크
+  openChatUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions SeasonSession[]
+  orders   Order[]
+
+  @@unique([clubId, number])
+  @@index([startDate])
+}
+
+/// 시즌의 월별 오프라인 만남 (1~4회차)
+model SeasonSession {
+  id              String      @id @default(cuid())
+  seasonId        String
+  season          Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  round           Int
+  title           String
+  description     String?
+  durationMinutes Int
+  spaceId         String?
+  space           Space?      @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  /// 공개 장소 표기 (제휴 공간명 또는 '장소 미정')
+  locationText    String
+  venueStatus     VenueStatus @default(REQUESTED)
+  /// 관리자가 대관을 확정하며 정한 일시
+  scheduledAt     DateTime?
+
+  @@unique([seasonId, round])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  seasonId      String
+  season        Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  status        OrderStatus @default(PENDING)
+  amount        Int
+  applicantName String
+  contact       String
+  instagramId   String
+  appliedAt     DateTime    @default(now())
+  confirmedAt   DateTime?
+  canceledAt    DateTime?
+
+  @@index([status])
+  @@index([seasonId])
+  @@index([userId])
+}
