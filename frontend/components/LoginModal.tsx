@@ -29,7 +29,7 @@ export default function LoginModal({ returnTo, onClose }: { returnTo: string; on
       >
         <div className="mb-6 text-center">
           <p className="font-display text-2xl font-medium tracking-[0.18em]">MIGAM</p>
-          <p className="mt-1 text-sm text-muted">동경하던 그 사람의 클럽에 합류해보세요</p>
+          <p className="mt-1 text-sm text-muted">좋아하는 그 사람의 하우스에 합류해보세요</p>
         </div>
 
         <div className="space-y-2.5">

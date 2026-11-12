@@ -1,22 +1,21 @@
 import type { Metadata, Viewport } from 'next';
-import GNB from '@/components/GNB';
+import AppShell from '@/components/AppShell';
 import Providers from '@/components/Providers';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '미감 — 동경하던 그 사람의 프라이빗 클럽',
-  description: '인플루언서가 직접 여는 4개월 시즌제 프라이빗 클럽',
+  title: '미감 · House — 내가 원하던 그 미감',
+  description: '좋아하는 인플루언서와 한 달에 한 번, 넉 달 동안 오프라인에서 만나는 시즌 멤버십',
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#f8f6f2' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
       <body>
         <Providers>
-          <GNB />
-          <main className="pb-24">{children}</main>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

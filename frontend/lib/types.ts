@@ -58,6 +58,7 @@ export interface ClubCard {
   displayName: string;
   moodTags: string[];
   coverImage: string | null;
+  intro: string;
   instagramFollowers: number | null;
   isFeatured: boolean;
   host: HostSummary;
@@ -96,6 +97,8 @@ export interface HostSeason {
 
 export interface HostClub {
   id: string;
+  createdAt: string;
+  isFeatured: boolean;
   displayName: string;
   moodTags: string[];
   gallery: string[];
@@ -170,6 +173,9 @@ export interface Space {
   priceCondition: string;
   description: string | null;
 }
+
+/** 호스트 1명이 동시에 운영할 수 있는 하우스 수 (backend MAX_CLUBS_PER_HOST와 동일) */
+export const MAX_HOUSES = 3;
 
 export interface AppConfig {
   bank: { name: string; accountNumber: string; holder: string };

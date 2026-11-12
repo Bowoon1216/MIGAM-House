@@ -128,6 +128,11 @@ export class SeasonFieldsDto {
 }
 
 export class OpenSeasonDto {
+  /** 기존 하우스의 다음 시즌이면 하우스 id, 비우면 새 하우스 생성 */
+  @IsOptional()
+  @IsString()
+  clubId?: string;
+
   @ValidateNested()
   @Type(() => ClubProfileDto)
   profile: ClubProfileDto;

@@ -52,3 +52,9 @@ export const isPast = (iso: string) => new Date(iso).getTime() <= Date.now();
 
 /** 'Jisu' → "Jisu's", 한글 이름은 그대로 */
 export const possessive = (name: string) => (/[a-zA-Z]$/.test(name) ? `${name}'s` : name);
+
+/** 소개글 첫 줄 → 제목(인용구), 나머지 → 본문 */
+export const splitIntro = (intro: string) => {
+  const lines = intro.split('\n').map((l) => l.trim()).filter(Boolean);
+  return { headline: lines[0] ?? '', body: lines.slice(1).join('\n') };
+};

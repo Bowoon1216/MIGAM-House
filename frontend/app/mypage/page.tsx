@@ -2,13 +2,13 @@
 
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { OrderBadge } from '@/components/Badges';
 import RequireRole from '@/components/RequireRole';
 import { Empty, Spinner } from '@/components/States';
-import { useMe } from '@/lib/auth';
-import { formatDay, formatDuration, formatMonthDay, formatPrice, possessive } from '@/lib/format';
+import { logout, useMe } from '@/lib/auth';
+import { formatDay, formatDuration, formatMonthDay, formatPrice } from '@/lib/format';
 import type { MyOrder } from '@/lib/types';
 
 export default function MyPage() {
@@ -24,12 +24,20 @@ export default function MyPage() {
 const PROVIDER_LABEL = { KAKAO: '카카오', NAVER: '네이버', DEV: '개발용' } as const;
 
 function MyPageContent() {
-  const { user } = useMe();
+  const { user, mutate } = useMe();
+  const router = useRouter();
   const applied = useSearchParams().get('applied');
   // 관리자가 입금 확인하면 창 포커스/주기적 갱신으로 상태 뱃지가 반영된다
   const { data: orders, isLoading } = useSWR<MyOrder[]>('/me/orders', { revalidateOnFocus: true, refreshInterval: 30_000 });
 
   if (!user) return null;
+
+  const onLogout = async () => {
+    await logout();
+    await mutate(null, { revalidate: false });
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <div className="container-app space-y-10 pt-8">
@@ -46,26 +54,29 @@ function MyPageContent() {
             <img src={user.profileImg} alt="" className="h-full w-full object-cover" />
           )}
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-serif text-xl font-medium">{user.name}</p>
           <p className="text-xs text-muted">
             {PROVIDER_LABEL[user.provider]} 로그인
             {user.instagramId && ` · @${user.instagramId}`}
           </p>
         </div>
+        <button onClick={onLogout} className="btn-outline btn-sm shrink-0 text-muted">
+          로그아웃
+        </button>
       </section>
 
       <section>
         <p className="eyebrow">My Memberships</p>
-        <h2 className="mb-5 mt-1 font-serif text-lg font-medium">나의 클럽</h2>
+        <h2 className="mb-5 mt-1 font-serif text-lg font-medium">나의 하우스</h2>
         {isLoading ? (
           <Spinner />
         ) : !orders?.length ? (
           <Empty>
-            아직 합류한 클럽이 없어요.
+            아직 합류한 하우스가 없어요.
             <div className="mt-4">
               <Link href="/" className="btn-outline">
-                클럽 둘러보기
+                하우스 둘러보기
               </Link>
             </div>
           </Empty>
@@ -100,7 +111,7 @@ function MembershipCard({ order: o }: { order: MyOrder }) {
             <p className="text-[10px] uppercase tracking-label text-muted">Season {season.number}</p>
             <OrderBadge status={o.displayStatus} />
           </div>
-          <p className="mt-1 truncate font-display text-[26px] italic leading-none">{possessive(season.club.displayName)} Club</p>
+          <p className="mt-1 truncate font-serif text-[22px] leading-tight">{season.club.displayName}의 House</p>
           <p className="mt-2 text-xs text-muted">
             {formatDay(season.startDate)} — {formatDay(season.endDate)}
           </p>

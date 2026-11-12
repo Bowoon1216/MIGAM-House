@@ -44,53 +44,58 @@ export default function HomeClient() {
   const filtered = !!(tag || q);
 
   return (
-    <div className="container-wide pt-10 sm:pt-14">
+    <div>
       {/* 인트로 */}
-      <section className="max-w-2xl">
-        <p className="eyebrow">Season Membership · 4 Months</p>
-        <h1 className="mt-4 font-serif text-[28px] font-medium leading-[1.35] tracking-tight sm:text-[40px]">
-          동경하던 그 사람의
+      <section className="px-5 pt-8">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent">Season Membership · 4 Months</p>
+        <h1 className="mt-4 font-serif text-[27px] font-normal leading-[1.4] tracking-tight">
+          내가 원하던 그 미감,
           <br />
-          <span className="font-display text-[34px] italic sm:text-[48px]">Private Club</span>에 들어가세요
+          <span className="font-semibold text-accent">미감하우스</span>에서 찾으세요!
         </h1>
-        <p className="mt-4 text-sm leading-relaxed text-muted sm:text-[15px]">
-          한 달에 한 번, 넉 달 동안. 좋아하는 인플루언서와 오프라인에서 만나
-          <br className="hidden sm:block" /> 그 사람의 미감과 라이프스타일을 가까이에서 배워요.
+        <p className="mt-4 text-[13px] leading-[1.8] text-muted">
+          한 달에 한 번, 넉 달 동안. 좋아하는 인플루언서와
+          <br />
+          오프라인에서 만나 취향을 나누고,
+          <br />
+          화면 너머의 일상을 함께 만들어가세요.
         </p>
       </section>
 
       {/* 검색 + 무드 필터 */}
-      <section className="sticky top-14 z-30 -mx-5 mt-10 border-b border-line/70 bg-ivory/90 px-5 pb-3 pt-3 backdrop-blur-md">
+      <section className="sticky top-14 z-30 bg-ivory/95 px-5 pb-3 pt-5 backdrop-blur-md">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             update({ q: input.trim() });
           }}
-          className="relative max-w-md"
+          className="flex items-center rounded-xl border border-line bg-paper pl-4 pr-1 focus-within:border-ink/40"
         >
           <input
             ref={searchRef}
-            className="w-full border-0 border-b border-ink/15 bg-transparent py-2 pr-16 text-sm outline-none transition placeholder:text-muted focus:border-ink"
+            className="min-w-0 flex-1 bg-transparent py-3.5 text-[13px] outline-none placeholder:text-muted"
             placeholder="인플루언서 이름 또는 @인스타그램 ID"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            enterKeyHint="search"
           />
           {q && (
             <button
               type="button"
-              className="absolute right-10 top-1/2 -translate-y-1/2 px-1 text-xs text-muted"
+              className="px-2 text-xs text-muted"
               onClick={() => update({ q: '' })}
               aria-label="검색어 지우기"
             >
               ✕
             </button>
           )}
-          <button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-xs font-medium tracking-wide">
+          <span className="h-4 w-px bg-line" />
+          <button type="submit" className="px-4 py-3 text-[13px] font-semibold text-accent">
             검색
           </button>
         </form>
 
-        <div className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">
+        <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5">
           <MoodChip active={!tag} onClick={() => update({ tag: '' })}>
             All
           </MoodChip>
@@ -102,20 +107,20 @@ export default function HomeClient() {
         </div>
       </section>
 
-      {/* 인플루언서 그리드 */}
-      <section className="pt-8">
+      {/* 인플루언서 리스트 */}
+      <section className="px-5 pb-16 pt-6">
         <div className="mb-5 flex items-baseline justify-between">
-          <h2 className="font-serif text-lg font-medium">
+          <h2 className="text-[17px] font-bold tracking-tight">
             {tag ? `#${tag} 무드의 사람들` : q ? `'${q}' 검색 결과` : '지금 만날 수 있는 사람들'}
           </h2>
-          {clubs && <span className="text-xs text-muted">{clubs.length} clubs</span>}
+          {clubs && <span className="font-serif text-[13px] italic text-muted">{clubs.length} houses</span>}
         </div>
 
         {isLoading ? (
           <Spinner />
         ) : !clubs?.length ? (
           <Empty>
-            {filtered ? '아직 이 무드의 클럽이 없어요.' : '곧 첫 번째 클럽이 열려요.'}
+            {filtered ? '아직 이 무드의 하우스가 없어요.' : '곧 첫 번째 하우스가 열려요.'}
             {filtered && (
               <div className="mt-4">
                 <button className="btn-outline btn-sm" onClick={() => router.replace(pathname)}>
@@ -125,13 +130,34 @@ export default function HomeClient() {
             )}
           </Empty>
         ) : (
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3 sm:gap-x-5 sm:gap-y-5 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-12 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-14">
             {clubs.map((c, i) => (
-              <ClubCard key={c.id} club={c} priority={i < 4} />
+              <ClubCard key={c.id} club={c} priority={i < 2} />
             ))}
           </div>
         )}
       </section>
+
+      {/* 브랜드 메시지 */}
+      <section className="bg-ivory-deep px-5 py-14">
+        <p className="font-serif text-[24px] leading-[1.45] text-accent">
+          좋아하는 마음이
+          <br />
+          우리의 일상이 되도록.
+        </p>
+        <p className="mt-5 text-[13px] leading-[1.8] text-muted">
+          미감은 취향이 닮은 사람들이 만나는 작은 집입니다.
+          <br />
+          네 번의 만남, 오래 이어질 새로운 관계를 시작해요.
+        </p>
+      </section>
+
+      <footer className="px-5 pb-12 pt-10">
+        <p className="font-serif text-[15px] font-medium">
+          <span className="font-display text-[17px] font-semibold">MIGAM</span> 미감 · House
+        </p>
+        <p className="mt-4 text-[11px] text-muted">© 2026 미감. 취향으로 이어지는 우리.</p>
+      </footer>
     </div>
   );
 }
@@ -140,8 +166,8 @@ function MoodChip({ active, onClick, children }: { active: boolean; onClick: () 
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 rounded-full border px-4 py-1.5 text-[13px] transition ${
-        active ? 'border-ink bg-ink text-ivory' : 'border-ink/15 text-ink-soft hover:border-ink/50'
+      className={`shrink-0 rounded-full border px-4 py-2 text-[13px] transition ${
+        active ? 'border-ink bg-ink text-ivory' : 'border-line bg-paper text-ink-soft hover:border-ink/40'
       }`}
     >
       {children}

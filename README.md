@@ -18,6 +18,8 @@ MIGAM/
 
 ## 아키텍처 핵심
 
+- **화면은 모바일 우선 한 컬럼**입니다. 휴대폰에선 화면 전체, 데스크톱에선 화면의 절반(최소 480px)을 씁니다. Tailwind `sm/md/lg` 브레이크포인트는 이 컬럼 폭 기준으로 재정의되어 있어요. ([tailwind.config.ts](frontend/tailwind.config.ts))
+
 - **브라우저는 항상 프론트 도메인의 `/api/*`만 호출합니다.** Next.js `rewrites`가 백엔드로 프록시합니다.
   그래서 쿠키가 프론트 도메인에 저장되고, Vercel ↔ Railway 사이의 크로스도메인 쿠키 문제가 생기지 않습니다.
 - OAuth 콜백 URL도 프론트 도메인 기준입니다: `https://<프론트도메인>/api/auth/{kakao|naver}/callback`
@@ -52,18 +54,19 @@ npm run build         # 전체 빌드
 
 | 명세 | 경로 |
 | --- | --- |
-| 1-1 메인 탐색 (인플루언서 카드 그리드) | `/` (`?tag=`, `?q=`) |
-| 1-2 인플루언서 클럽 상세 | `/clubs/[id]` |
+| 1-1 메인 탐색 (하우스 카드 리스트) | `/` (`?tag=`, `?q=`) |
+| 1-2 하우스 상세 | `/clubs/[id]` |
 | 1-3 멤버십 신청/입금 안내 | `/clubs/[id]/apply` |
-| 마이페이지 (나의 클럽) | `/mypage` |
-| 2-1 호스트 대시보드 (시즌별 멤버) | `/host` |
-| 2-2 시즌 오픈하기 (4단계) | `/host/season/new` |
+| 마이페이지 (나의 하우스) | `/mypage` |
+| 2-1 호스트 대시보드 (내 하우스 최대 3개, 시즌별 멤버) | `/host` (`?house=`) |
+| 하우스 페이지 수정 | `/host/edit?club=[id]` |
+| 2-2 새 하우스 만들기 / 다음 시즌 오픈 (4단계) | `/host/season/new` / `/host/season/new?club=[id]` |
 | 3 입금 확인 | `/admin/orders` |
 | 3 회차별 대관 확정 | `/admin/venues` |
-| 클럽 추천 / 무드 태그 | `/admin/clubs`, `/admin/mood-tags` |
+| 하우스 추천 / 무드 태그 | `/admin/clubs`, `/admin/mood-tags` |
 | 호스트 / 제휴 공간 | `/admin/hosts`, `/admin/spaces` |
 
-데이터 구조: `User` → `Club`(호스트당 1개) → `Season`(4개월 기수) → `SeasonSession`(1~4회차), `Order`는 `Season`에 대한 합류 신청입니다.
+데이터 구조: `User` → `Club`(= 하우스, 호스트당 최대 3개) → `Season`(4개월 기수) → `SeasonSession`(1~4회차), `Order`는 `Season`에 대한 합류 신청입니다.
 
 ## 배포 가이드
 

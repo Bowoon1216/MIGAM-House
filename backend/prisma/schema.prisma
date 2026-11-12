@@ -44,7 +44,7 @@ model User {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  club   Club?
+  clubs  Club[]
   orders Order[]
 
   @@unique([provider, snsId])
@@ -69,10 +69,10 @@ model Space {
   sessions       SeasonSession[]
 }
 
-/// 인플루언서(호스트) 1명당 1개의 클럽 = 개인 브랜드 홈페이지
+/// 하우스 = 인플루언서(호스트)의 모임 페이지. 호스트 1명당 최대 3개 (MAX_CLUBS_PER_HOST)
 model Club {
   id                 String   @id @default(cuid())
-  hostId             String   @unique
+  hostId             String
   host               User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
   /// 클럽에 크게 노출되는 이름 (예: Jisu)
   displayName        String
@@ -92,6 +92,7 @@ model Club {
 
   seasons Season[]
 
+  @@index([hostId])
   @@index([isFeatured])
 }
 

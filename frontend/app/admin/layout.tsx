@@ -7,7 +7,7 @@ import RequireRole from '@/components/RequireRole';
 const TABS = [
   { href: '/admin/orders', label: '입금 확인' },
   { href: '/admin/venues', label: '대관 관리' },
-  { href: '/admin/clubs', label: '클럽' },
+  { href: '/admin/clubs', label: '하우스' },
   { href: '/admin/hosts', label: '호스트' },
   { href: '/admin/mood-tags', label: '무드 태그' },
   { href: '/admin/spaces', label: '제휴 공간' },

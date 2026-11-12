@@ -30,9 +30,21 @@ export class ClubsController {
 
   // 호스트
   @Auth(Role.HOST)
-  @Get('host/club')
-  hostClub(@CurrentUser() user: User) {
-    return this.clubs.hostClub(user);
+  @Get('host/clubs')
+  hostClubs(@CurrentUser() user: User) {
+    return this.clubs.hostClubs(user);
+  }
+
+  @Auth(Role.HOST)
+  @Get('host/clubs/:id')
+  hostClub(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.clubs.hostClub(user, id);
+  }
+
+  @Auth(Role.HOST)
+  @Delete('host/clubs/:id')
+  deleteClub(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.clubs.deleteClub(user, id);
   }
 
   @Auth(Role.HOST)
@@ -42,9 +54,9 @@ export class ClubsController {
   }
 
   @Auth(Role.HOST)
-  @Patch('host/club')
-  updateProfile(@CurrentUser() user: User, @Body() dto: ClubProfileDto) {
-    return this.clubs.updateProfile(user, dto);
+  @Patch('host/clubs/:id')
+  updateProfile(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: ClubProfileDto) {
+    return this.clubs.updateProfile(user, id, dto);
   }
 
   @Auth(Role.HOST)

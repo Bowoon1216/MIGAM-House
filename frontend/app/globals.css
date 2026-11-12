@@ -9,16 +9,17 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-ivory text-ink antialiased;
+    @apply bg-ivory-deep text-ink antialiased;
   }
 }
 
 @layer components {
+  /* AppShell 컬럼 안에서 쓰는 컨테이너 (컬럼 폭이 곧 최대 폭) */
   .container-app {
-    @apply mx-auto w-full max-w-screen-md px-5;
+    @apply mx-auto w-full max-w-[768px] px-5;
   }
   .container-wide {
-    @apply mx-auto w-full max-w-6xl px-5;
+    @apply w-full px-5;
   }
   /* 작은 대문자 라벨 (PRIVATE CLUB, SEASON 1 등) */
   .eyebrow {
@@ -29,6 +30,9 @@
   }
   .btn-primary {
     @apply btn bg-ink text-ivory hover:bg-black;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-white hover:brightness-110;
   }
   .btn-outline {
     @apply btn border border-ink/20 bg-transparent hover:border-ink;

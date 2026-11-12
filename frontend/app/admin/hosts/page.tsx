@@ -71,12 +71,12 @@ export default function AdminHostsPage() {
                   </p>
                 </div>
                 {u.role === 'USER' && (
-                  <button className="btn-primary btn-sm" onClick={() => setRole(u, 'HOST')}>
+                  <button className="btn-primary btn-sm shrink-0" onClick={() => setRole(u, 'HOST')}>
                     호스트 권한 부여
                   </button>
                 )}
                 {u.role === 'HOST' && (
-                  <button className="btn-outline btn-sm" onClick={() => setRole(u, 'USER')}>
+                  <button className="btn-outline btn-sm shrink-0" onClick={() => setRole(u, 'USER')}>
                     권한 해제
                   </button>
                 )}

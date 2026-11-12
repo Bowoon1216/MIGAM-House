@@ -30,6 +30,9 @@ export function seasonPhase(
 }
 
 /** 시즌 시작일로부터 4개월 뒤 종료일 */
+/** 호스트 1명이 동시에 운영할 수 있는 하우스 수 */
+export const MAX_CLUBS_PER_HOST = 3;
+
 export const SEASON_MONTHS = 4;
 export function seasonEndDate(startDate: Date): Date {
   const end = new Date(startDate);

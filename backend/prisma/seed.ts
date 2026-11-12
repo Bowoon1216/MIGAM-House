@@ -114,7 +114,7 @@ async function main() {
 
   for (const c of CLUBS) {
     const host = await upsertUser(c.snsId, c.name, Role.HOST, c.instagramId);
-    if (await prisma.club.findUnique({ where: { hostId: host.id } })) continue;
+    if (await prisma.club.findFirst({ where: { hostId: host.id } })) continue;
 
     const key = c.displayName.toLowerCase();
     const startDate = daysFromNow(c.startIn);

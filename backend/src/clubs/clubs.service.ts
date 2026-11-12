@@ -4,6 +4,7 @@ import {
   ACTIVE_ORDER_STATUSES,
   canSeePrivateInfo,
   displayStatus,
+  MAX_CLUBS_PER_HOST,
   recruitStatus,
   seasonEndDate,
   seasonPhase,
@@ -38,6 +39,38 @@ function seasonSummary(s: SeasonWithCount) {
 
 const PHASE_ORDER = { RECRUITING: 0, FULL: 1, IN_PROGRESS: 2, ENDED: 3 } as const;
 
+/** 하우스 주인(또는 관리자)만 */
+function assertOwner(club: { hostId: string }, user: User) {
+  if (club.hostId !== user.id && user.role !== Role.ADMIN) throw new ForbiddenException();
+}
+
+const hostClubInclude = {
+  seasons: {
+    orderBy: { number: 'desc' },
+    include: {
+      sessions: { orderBy: { round: 'asc' }, include: { space: { select: { name: true, address: true } } } },
+      orders: { select: { status: true } },
+    },
+  },
+} satisfies Prisma.ClubInclude;
+
+function toHostClub(club: Prisma.ClubGetPayload<{ include: typeof hostClubInclude }>) {
+  return {
+    ...club,
+    seasons: club.seasons.map(({ orders, ...s }) => {
+      const confirmed = orders.filter((o) => o.status === 'CONFIRMED').length;
+      const pending = orders.filter((o) => o.status === 'PENDING').length;
+      return {
+        ...s,
+        confirmedCount: confirmed,
+        pendingCount: pending,
+        appliedCount: confirmed + pending,
+        phase: seasonPhase(s, confirmed + pending),
+      };
+    }),
+  };
+}
+
 @Injectable()
 export class ClubsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -62,7 +95,7 @@ export class ClubsService {
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
-    const cards = clubs.map(({ seasons, gallery, intro: _intro, benefits: _b, ...c }) => ({
+    const cards = clubs.map(({ seasons, gallery, benefits: _b, ...c }) => ({
       ...c,
       coverImage: gallery[0] ?? null,
       season: seasons[0] ? seasonSummary(seasons[0]) : null,
@@ -100,7 +133,7 @@ export class ClubsService {
         _count: { select: { seasons: true } },
       },
     });
-    if (!club) throw new NotFoundException('클럽을 찾을 수 없습니다.');
+    if (!club) throw new NotFoundException('하우스를 찾을 수 없습니다.');
 
     const { seasons, _count, ...rest } = club;
     const season = seasons[0];
@@ -129,34 +162,36 @@ export class ClubsService {
 
   // ───────────── 호스트 ─────────────
 
-  async hostClub(host: User) {
-    const club = await this.prisma.club.findUnique({
+  /** 호스트의 하우스 목록 (최신순, 각 하우스의 전체 시즌 포함) */
+  async hostClubs(host: User) {
+    const clubs = await this.prisma.club.findMany({
       where: { hostId: host.id },
-      include: {
-        seasons: {
-          orderBy: { number: 'desc' },
-          include: {
-            sessions: { orderBy: { round: 'asc' }, include: { space: { select: { name: true, address: true } } } },
-            orders: { select: { status: true } },
-          },
-        },
-      },
+      include: hostClubInclude,
+      orderBy: { createdAt: 'asc' },
     });
-    if (!club) return null;
-    return {
-      ...club,
-      seasons: club.seasons.map(({ orders, ...s }) => {
-        const confirmed = orders.filter((o) => o.status === 'CONFIRMED').length;
-        const pending = orders.filter((o) => o.status === 'PENDING').length;
-        return {
-          ...s,
-          confirmedCount: confirmed,
-          pendingCount: pending,
-          appliedCount: confirmed + pending,
-          phase: seasonPhase(s, confirmed + pending),
-        };
-      }),
-    };
+    return clubs.map(toHostClub);
+  }
+
+  async hostClub(host: User, clubId: string) {
+    const club = await this.prisma.club.findUnique({ where: { id: clubId }, include: hostClubInclude });
+    if (!club) throw new NotFoundException('하우스를 찾을 수 없습니다.');
+    assertOwner(club, host);
+    return toHostClub(club);
+  }
+
+  /** 하우스 삭제: 합류 신청 이력이 한 번도 없는 하우스만 */
+  async deleteClub(host: User, clubId: string) {
+    const club = await this.prisma.club.findUnique({
+      where: { id: clubId },
+      include: { seasons: { select: { _count: { select: { orders: true } } } } },
+    });
+    if (!club) throw new NotFoundException('하우스를 찾을 수 없습니다.');
+    assertOwner(club, host);
+    if (club.seasons.some((s) => s._count.orders > 0)) {
+      throw new BadRequestException('합류 신청 이력이 있는 하우스는 삭제할 수 없어요. 관리자에게 문의해주세요.');
+    }
+    await this.prisma.club.delete({ where: { id: clubId } });
+    return { ok: true };
   }
 
   /** 회차 입력 → 저장할 데이터 (제휴 공간명으로 공개 장소 표기) */
@@ -193,12 +228,28 @@ export class ClubsService {
     const profile = this.profileData(dto.profile);
 
     return this.prisma.$transaction(async (tx) => {
-      const club = await tx.club.upsert({
-        where: { hostId: host.id },
-        create: { hostId: host.id, ...profile },
-        update: profile,
-        include: { seasons: { orderBy: { number: 'desc' }, take: 1 } },
-      });
+      let club;
+      if (dto.clubId) {
+        // 기존 하우스의 다음 시즌
+        const found = await tx.club.findUnique({ where: { id: dto.clubId } });
+        if (!found) throw new NotFoundException('하우스를 찾을 수 없습니다.');
+        assertOwner(found, host);
+        club = await tx.club.update({
+          where: { id: found.id },
+          data: profile,
+          include: { seasons: { orderBy: { number: 'desc' }, take: 1 } },
+        });
+      } else {
+        // 새 하우스
+        const count = await tx.club.count({ where: { hostId: host.id } });
+        if (count >= MAX_CLUBS_PER_HOST) {
+          throw new ConflictException(`하우스는 최대 ${MAX_CLUBS_PER_HOST}개까지 만들 수 있어요.`);
+        }
+        club = await tx.club.create({
+          data: { hostId: host.id, ...profile },
+          include: { seasons: { orderBy: { number: 'desc' }, take: 1 } },
+        });
+      }
       const last = club.seasons[0];
       if (last && last.startDate > new Date()) {
         throw new ConflictException(`이미 멤버를 모집 중인 시즌 ${last.number}이 있어요.`);
@@ -219,10 +270,11 @@ export class ClubsService {
     });
   }
 
-  /** 클럽 페이지(프로필) 수정 */
-  async updateProfile(host: User, dto: ClubProfileDto) {
-    const club = await this.prisma.club.findUnique({ where: { hostId: host.id } });
-    if (!club) throw new NotFoundException('아직 클럽이 없어요. 먼저 시즌을 오픈해주세요.');
+  /** 하우스 페이지(프로필) 수정 */
+  async updateProfile(host: User, clubId: string, dto: ClubProfileDto) {
+    const club = await this.prisma.club.findUnique({ where: { id: clubId } });
+    if (!club) throw new NotFoundException('하우스를 찾을 수 없습니다.');
+    assertOwner(club, host);
     return this.prisma.club.update({ where: { id: club.id }, data: this.profileData(dto) });
   }
 
@@ -238,7 +290,7 @@ export class ClubsService {
       include: { club: true, sessions: true, ...activeCount },
     });
     if (!season) throw new NotFoundException('시즌을 찾을 수 없습니다.');
-    if (season.club.hostId !== host.id && host.role !== Role.ADMIN) throw new ForbiddenException();
+    assertOwner(season.club, host);
 
     const now = new Date();
     if (season.endDate <= now) throw new BadRequestException('종료된 시즌은 수정할 수 없어요.');
@@ -287,7 +339,7 @@ export class ClubsService {
   async seasonMembers(seasonId: string, viewer: User) {
     const season = await this.prisma.season.findUnique({ where: { id: seasonId }, include: { club: true } });
     if (!season) throw new NotFoundException('시즌을 찾을 수 없습니다.');
-    if (season.club.hostId !== viewer.id && viewer.role !== Role.ADMIN) throw new ForbiddenException();
+    assertOwner(season.club, viewer);
     return this.prisma.order.findMany({
       where: { seasonId },
       select: { id: true, applicantName: true, instagramId: true, contact: true, status: true, amount: true, appliedAt: true },

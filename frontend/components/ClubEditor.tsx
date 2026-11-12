@@ -37,9 +37,9 @@ const toKstYmd = (iso: string) => new Date(new Date(iso).getTime() + 9 * 3600_00
 const tomorrowYmd = () => toKstYmd(new Date(Date.now() + 86400_000).toISOString());
 
 /**
- * 클럽 편집기
- * - open: 4단계 마법사로 새 시즌 오픈 (클럽 프로필도 함께 저장)
- * - edit: 클럽 페이지(프로필) + 진행 중/모집 중 시즌 수정. 탭으로 자유롭게 이동하며 언제든 저장
+ * 하우스 편집기
+ * - open: 4단계 마법사로 새 시즌 오픈 (하우스 프로필도 함께 저장)
+ * - edit: 하우스 페이지(프로필) + 진행 중/모집 중 시즌 수정. 탭으로 자유롭게 이동하며 언제든 저장
  */
 export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club: HostClub | null }) {
   const router = useRouter();
@@ -139,7 +139,7 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
 
   const validate = (s: number): string => {
     if (s === 0) {
-      if (!displayName.trim()) return '클럽에 표시될 이름을 입력해주세요.';
+      if (!displayName.trim()) return '하우스에 표시될 이름을 입력해주세요.';
       if (!tags.length) return '나를 나타내는 무드 태그를 1개 이상 골라주세요.';
       if (!intro.trim()) return '짧은 소개 글을 적어주세요.';
     }
@@ -221,19 +221,21 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
         benefits: benefits.filter((b) => b.trim()),
       };
 
-      if (isEdit) {
-        await api('/host/club', { method: 'PATCH', ...json(profile) });
+      if (isEdit && club) {
+        await api(`/host/clubs/${club.id}`, { method: 'PATCH', ...json(profile) });
         if (editSeason) await api(`/host/seasons/${editSeason.id}`, { method: 'PATCH', ...json(seasonPayload()) });
-        await mutate('/host/club');
-        if (club) await mutate(`/clubs/${club.id}`);
+        await mutate('/host/clubs');
+        await mutate(`/host/clubs/${club.id}`);
+        await mutate(`/clubs/${club.id}`);
         setSaved(true);
         setSaving(false);
       } else {
         const season = await api<{ club: { id: string } }>('/host/seasons', {
           method: 'POST',
-          ...json({ profile, season: seasonPayload() }),
+          // club이 있으면 그 하우스의 다음 시즌, 없으면 새 하우스
+          ...json({ ...(club ? { clubId: club.id } : {}), profile, season: seasonPayload() }),
         });
-        await mutate('/host/club');
+        await mutate('/host/clubs');
         router.push(`/clubs/${season.club.id}`);
       }
     } catch (e) {
@@ -257,10 +259,10 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
       {/* 헤더 */}
       {isEdit ? (
         <>
-          <p className="eyebrow">Edit My Club</p>
-          <h1 className="mt-2 font-serif text-2xl font-medium">클럽 페이지 수정</h1>
+          <p className="eyebrow">Edit My House</p>
+          <h1 className="mt-2 font-serif text-2xl font-medium">하우스 페이지 수정</h1>
           <p className="mt-1 text-xs text-muted">
-            {editSeason ? `클럽 프로필과 시즌 ${editSeason.number} 내용을 수정해요.` : '클럽 프로필을 수정해요. (진행 중인 시즌이 없어요)'}
+            {editSeason ? `하우스 프로필과 시즌 ${editSeason.number} 내용을 수정해요.` : '하우스 프로필을 수정해요. (진행 중인 시즌이 없어요)'}
           </p>
           <nav className="no-scrollbar -mx-5 mt-6 flex gap-2 overflow-x-auto px-5">
             {visibleSteps.map((s, i) => (
@@ -279,7 +281,7 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
         </>
       ) : (
         <>
-          <p className="eyebrow">Season {seasonNumber} Open</p>
+          <p className="eyebrow">{club ? `${club.displayName}의 House · Season ${seasonNumber} Open` : 'New House · Season 1 Open'}</p>
           <div className="mt-4 grid grid-cols-4 gap-1.5">
             {STEPS.map((s, i) => (
               <button
@@ -304,7 +306,7 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
         {step === 0 && (
           <>
             <Field
-              label="클럽에 표시될 이름"
+              label="하우스에 표시될 이름"
               hint={displayName ? `"${possessive(displayName)} Private Club"으로 보여져요.` : '영문 닉네임을 추천해요. 예) Jisu'}
             >
               <input
@@ -357,7 +359,7 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
               </div>
             </div>
 
-            <Field label="나의 미감 소개" hint="클럽 페이지에 인용구처럼 크게 보여져요.">
+            <Field label="나의 미감 소개" hint="첫 줄은 하우스 페이지에 인용구처럼 크게, 나머지는 본문으로 보여져요.">
               <textarea
                 className="input min-h-[160px] leading-relaxed"
                 value={intro}
@@ -367,7 +369,7 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
               />
             </Field>
 
-            <Field label="인스타그램 팔로워 수 (선택)" hint="클럽 페이지 상단에 신뢰도 표시로 보여져요.">
+            <Field label="인스타그램 팔로워 수 (선택)" hint="하우스 페이지 상단에 신뢰도 표시로 보여져요.">
               <input
                 className="input"
                 type="number"
@@ -580,7 +582,7 @@ export default function ClubEditor({ mode, club }: { mode: 'open' | 'edit'; club
       </div>
 
       {/* 하단 버튼 */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ivory/95 backdrop-blur-md">
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-shell border-t border-line bg-ivory/95 backdrop-blur-md">
         {isEdit ? (
           <div className="container-app flex gap-2 py-3">
             {club && (

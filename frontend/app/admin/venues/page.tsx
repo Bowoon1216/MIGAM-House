@@ -102,7 +102,7 @@ function SessionRow({ s, onChange }: { s: AdminSession; onChange: () => void }) 
       </div>
       {s.space && (
         <div className="flex flex-wrap items-center gap-2">
-          <input type="datetime-local" className="input w-auto py-2" value={when} onChange={(e) => setWhen(e.target.value)} />
+          <input type="datetime-local" className="input w-full py-2 sm:w-auto" value={when} onChange={(e) => setWhen(e.target.value)} />
           {s.venueStatus === 'REQUESTED' ? (
             <button className="btn-primary btn-sm" disabled={busy} onClick={() => save('FIXED')}>
               대관 확정

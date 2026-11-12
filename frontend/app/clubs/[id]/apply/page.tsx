@@ -7,7 +7,7 @@ import RequireRole from '@/components/RequireRole';
 import { Empty, Spinner } from '@/components/States';
 import { api, json } from '@/lib/api';
 import { useMe } from '@/lib/auth';
-import { formatDay, formatPrice, possessive } from '@/lib/format';
+import { formatDay, formatPrice } from '@/lib/format';
 import type { AppConfig, ClubDetail } from '@/lib/types';
 
 export default function ApplyPage({ params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +53,7 @@ function ApplyForm({ id }: { id: string }) {
 
   if (isLoading) return <Spinner />;
   const season = c?.season;
-  if (!c || !season) return <Empty>클럽을 찾을 수 없어요.</Empty>;
+  if (!c || !season) return <Empty>하우스를 찾을 수 없어요.</Empty>;
   if (season.phase !== 'RECRUITING') return <Empty>지금은 멤버를 모집하고 있지 않아요.</Empty>;
 
   const bank = config?.bank;
@@ -86,7 +86,7 @@ function ApplyForm({ id }: { id: string }) {
   return (
     <form onSubmit={submit} className="container-app space-y-10 pt-8" noValidate>
       <div>
-        <p className="eyebrow">Join the club</p>
+        <p className="eyebrow">Join the House</p>
         <h1 className="mt-2 font-serif text-2xl font-medium">멤버십 합류 신청</h1>
       </div>
 
@@ -100,7 +100,7 @@ function ApplyForm({ id }: { id: string }) {
         </div>
         <div className="flex min-w-0 flex-col justify-center py-1">
           <p className="text-[10px] uppercase tracking-label text-ivory/50">Season {season.number} · 4 months</p>
-          <p className="mt-1 truncate font-display text-[28px] italic leading-none">{possessive(c.displayName)} Private Club</p>
+          <p className="mt-1 truncate font-serif text-[24px] leading-tight">{c.displayName}의 House</p>
           <p className="mt-2 text-xs text-ivory/60">
             {formatDay(season.startDate)} 시작 · 월 1회 · 총 4회
           </p>
@@ -148,7 +148,7 @@ function ApplyForm({ id }: { id: string }) {
         </p>
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ivory/95 backdrop-blur-md">
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-shell border-t border-line bg-ivory/95 backdrop-blur-md">
         <div className="container-app py-3">
           <button type="submit" className="btn-primary w-full py-3.5" disabled={submitting}>
             {submitting ? '신청 중...' : '입금 완료 및 합류하기'}

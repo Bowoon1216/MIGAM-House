@@ -37,7 +37,7 @@ export default function AdminSpacesPage() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
+    <div className="grid gap-8 md:grid-cols-[320px_1fr]">
       <form onSubmit={add} className="card h-fit space-y-3 p-5">
         <h2 className="font-bold">제휴 공간 추가</h2>
         <input className="input" placeholder="공간명 (예: 성수 A 스튜디오)" value={f.name} onChange={set('name')} />

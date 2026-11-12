@@ -23,7 +23,7 @@ export default function AdminMoodTagsPage() {
   };
 
   const remove = async (t: MoodTag) => {
-    if (!confirm(`#${t.name} 태그를 삭제할까요? 이미 이 태그를 쓰는 클럽에는 그대로 남아요.`)) return;
+    if (!confirm(`#${t.name} 태그를 삭제할까요? 이미 이 태그를 쓰는 하우스에는 그대로 남아요.`)) return;
     await api(`/admin/mood-tags/${t.id}`, { method: 'DELETE' });
     await mutate();
   };
