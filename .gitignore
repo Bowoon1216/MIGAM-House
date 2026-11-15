@@ -11,4 +11,5 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 .vercel
-uploads/
+# 개발용 로컬 이미지 저장 폴더만 제외 (backend/src/uploads 소스 코드는 포함되어야 함)
+/backend/uploads/
