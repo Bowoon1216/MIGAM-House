@@ -82,7 +82,12 @@ npm run build         # 전체 빌드
 1. New Project → Deploy from GitHub repo → 이 레포를 선택합니다.
 2. Service Settings
    - **Root Directory: 비워두기 (레포 루트)**. npm workspaces는 루트의 `package-lock.json`을 사용하기 때문입니다.
-   - **Config file path: `/backend/railway.json`**. 빌드/시작 명령과 헬스체크, watch 경로가 정의되어 있습니다.
+   - 아래 값을 Settings에 **직접 입력**합니다. (Railway의 Config as Code가 지원 종료되어, 새 서비스는 `backend/railway.json` 파일 경로를 등록할 수 없습니다. 이 파일은 참고용입니다.)
+     - Build Command: `npm run build -w backend` (패키지 설치 `npm ci`는 Railway가 먼저 자동 실행)
+     - Start Command: `npm run start:prod -w backend`
+     - Healthcheck Path: `/api/health`
+     - Watch Paths(선택): `/backend/**`, `/package-lock.json`
+   - Variables에 `RAILPACK_PRUNE_DEPS`를 켜지 마세요. 시작 시 마이그레이션에 쓰는 `prisma` CLI가 지워집니다.
 3. Variables: [backend/.env.example](backend/.env.example) 항목을 모두 입력합니다. 특히 아래 값들을 확인하세요.
    - `NODE_ENV=production`, `JWT_SECRET`(긴 랜덤 문자열)
    - `FRONTEND_URL=https://<vercel 도메인>`
@@ -128,3 +133,28 @@ npm run build         # 전체 빌드
 npm run dev
 ```
 백엔드(:4000)와 프론트(:3000)가 함께 뜹니다. **http://localhost:3000** 에 접속하세요.
+
+
+### 로그인 넣기
+2. 카카오 로그인
+developers.kakao.com → 내 애플리케이션 → 애플리케이션 추가
+
+KAKAO_CLIENT_ID: 앱 키 중 REST API 키예요.
+플랫폼 → Web 사이트 도메인: http://localhost:3000을 넣어요. 배포 후에는 Vercel 주소도 추가해요.
+카카오 로그인 → 활성화 ON
+Redirect URI:
+http://localhost:3000/api/auth/kakao/callback
+배포 후 추가: https://<vercel주소>/api/auth/kakao/callback
+동의항목: 닉네임, 프로필 사진
+KAKAO_CLIENT_SECRET: 보안 → Client Secret에서 코드를 만들어요.
+선택이에요. 다만 활성화를 켰다면 반드시 넣어야 로그인이 돼요.
+3. 네이버 로그인 (선택)
+developers.naver.com → Application → 애플리케이션 등록
+
+사용 API: 네이버 로그인
+제공 정보: 이름, 이메일, 프로필 사진
+환경 PC 웹
+서비스 URL: http://localhost:3000
+Callback URL: http://localhost:3000/api/auth/naver/callback. 배포 후 Vercel 주소도 추가해요.
+등록하면 나오는 Client ID / Client Secret을 각각 넣어요.
+네이버 검수를 통과하기 전에는 멤버관리에 등록한 계정만 로그인할 수 있어요.
